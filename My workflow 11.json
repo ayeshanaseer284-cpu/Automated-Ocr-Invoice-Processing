@@ -1,0 +1,343 @@
+{
+  "name": "My workflow 11",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "file",
+        "formDescription": "=",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "file uploaded",
+              "fieldType": "file"
+            },
+            {
+              "fieldLabel": "email"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b3521326-368f-4559-a650-22203231cb03",
+      "name": "On form submission",
+      "webhookId": "156dfb1c-ff51-4217-badd-13a9e5bf363c"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/files",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer EVU8lhzRkY7wJpRaYz3OEHaz2XSFEv5i"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "purpose",
+              "value": "ocr"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "file_uploaded"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "de4f4d56-9c89-4be8-8041-98b558b46df6",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.mistral.ai/v1/files/{{ $json.id }}/url",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "expiry",
+              "value": "24"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer 4zA8JrqCaZXdPJrnyXOaE0JFXuQ9lH6B"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        464,
+        0
+      ],
+      "id": "42c057b3-816d-4c3b-b04e-40fdb9bc2672",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.pages[0].markdown }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Invoice Number",
+              "description": "Invoice Number"
+            },
+            {
+              "name": "Company Address",
+              "description": "Company Address"
+            },
+            {
+              "name": "Customer Name",
+              "description": "Name of the Customer"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "15c30367-59af-4dd9-8666-d800964d2476",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        976,
+        208
+      ],
+      "id": "ba6e606d-0239-4e23-a42b-57a7427161c5",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "L0ORzZmzn7YuMPyT",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5c87a734-eb86-4699-a093-0317d8ce8770",
+              "leftValue": "={{ $json.output['Invoice Number'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        0
+      ],
+      "id": "696a06a1-522f-428d-ab3b-1807d0dba5f0",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "anamarif443@gmail.com",
+        "subject": "=OCR Report {{ $json.output['Invoice Number'] }}",
+        "message": "=Dear Sir, \n\nInvoice processing has been completed successfully via our automated OCR system.\nInvoice Details:\n\nInvoice Number: {{ $json.output['Invoice Number'] }}\nCustomer: {{ $json.output['Customer Name'] }}\nCompany Address: {{ $json.output['Company Address'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1808,
+        -96
+      ],
+      "id": "f0e1bf04-7d20-4006-8782-bf961c747028",
+      "name": "Send a message",
+      "webhookId": "6cb710f4-1cc2-46c4-8eea-4529998c04db",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YfLcSbMqEzfVc0uy",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.mistral.ai/v1/ocr",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 4zA8JrqCaZXdPJrnyXOaE0JFXuQ9lH6B"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"mistral-ocr-latest\",\n  \"document\": {\n    \"type\": \"document_url\",\n    \"document_url\": \"{{ $json.url }}\"\n  },\n  \"include_image_base64\": true\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "ocr_output.json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        672,
+        32
+      ],
+      "id": "1fbbeedf-e2e1-463b-b6c3-ad535ad099d0",
+      "name": "HTTP Request3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "32a3e269-464b-4b2e-82c4-05fd9bbe19de",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "984ed2f5b232e41a9bb4337efb5257e4eafffc1379dbe22c8633efc88b8c5abc"
+  },
+  "id": "Vrs5xj1xGBGxyLhN",
+  "tags": []
+}
